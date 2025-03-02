@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import React from "react";
-import {Button, Col, Radio, Row, Select, Statistic} from "antd";
+import {Button, Col, Radio, Row, Select, Spin, Statistic} from "antd";
 import BaseListPage from "./BaseListPage";
 import * as Setting from "./Setting";
 import * as UsageBackend from "./backend/UsageBackend";
@@ -37,6 +37,9 @@ class UsagePage extends BaseListPage {
       selectedUser: "All",
       userTableInfo: null,
       selectedTableInfo: null,
+      statisticLoading: true,
+      chartLoading: true,
+      tableLoading: true,
     };
   }
 
@@ -53,15 +56,19 @@ class UsagePage extends BaseListPage {
   }
 
   getUsages(serverUrl) {
+    this.setState({statisticLoading: true, chartLoading: true});
     UsageBackend.getUsages(serverUrl, this.state.selectedUser, 30)
       .then((res) => {
         if (res.status === "ok") {
           this.setState({
             usages: res.data,
             usageMetadata: res.data2,
+            statisticLoading: false,
+            chartLoading: false,
           });
         } else {
           Setting.showMessage("error", `Failed to get usages: ${res.msg}`);
+          this.setState({statisticLoading: false, chartLoading: false});
         }
       });
   }
@@ -127,14 +134,17 @@ class UsagePage extends BaseListPage {
       });
   }
   getUserTableInfos(serverUrl) {
+    this.setState({tableLoading: true});
     UsageBackend.getUserTableInfos(serverUrl, this.props.account.name)
       .then((res) => {
         if (res.status === "ok") {
           this.setState({
             userTableInfo: res.data,
+            tableLoading: false,
           });
         } else {
           Setting.showMessage("error", `Failed to get userTableInfo: ${res.msg}`);
+          this.setState({tableLoading: false});
         }
       });
   }
@@ -289,47 +299,49 @@ class UsagePage extends BaseListPage {
     };
 
     return (
-      <Row gutter={16}>
-        {
-          this.props.account.name !== "admin" ? <Col span={6} /> : (
-            <React.Fragment>
-              <Col span={3}>
-                <Statistic title={i18next.t("task:Application")} value={this.state.usageMetadata.application} />
-              </Col>
-            </React.Fragment>
-          )
-        }
-        <Col span={3}>
-          <Statistic title={i18next.t("general:Users")} value={lastUsage.userCount} />
-        </Col>
-        <Col span={3}>
-          <Statistic title={i18next.t("general:Chats")} value={lastUsage.chatCount} />
-        </Col>
-        <Col span={3}>
-          <Statistic title={i18next.t("general:Messages")} value={lastUsage.messageCount} />
-        </Col>
-        <Col span={3}>
-          <Statistic title={i18next.t("general:Tokens")} value={lastUsage.tokenCount} />
-        </Col>
-        {
-          this.props.account.name !== "admin" ? null : (
-            <React.Fragment>
-              <Col span={3}>
-                <Statistic title={i18next.t("chat:Price")} value={lastUsage.price} prefix={lastUsage.currency && "$"} />
-              </Col>
-              {
-                Conf.DefaultLanguage === "en" ? null : (
-                  <React.Fragment>
-                    <Col span={3}>
-                      <Statistic title={i18next.t("chat:CPrice")} value={parseFloat((lastUsage.price * 7.2).toFixed(2))} prefix={"￥"} />
-                    </Col>
-                  </React.Fragment>
-                )
-              }
-            </React.Fragment>
-          )
-        }
-      </Row>
+      <Spin spinning={this.state.statisticLoading}>
+        <Row gutter={16}>
+          {
+            this.props.account.name !== "admin" ? <Col span={6} /> : (
+              <React.Fragment>
+                <Col span={3}>
+                  <Statistic title={i18next.t("task:Application")} value={this.state.usageMetadata.application} />
+                </Col>
+              </React.Fragment>
+            )
+          }
+          <Col span={3}>
+            <Statistic title={i18next.t("general:Users")} value={lastUsage.userCount} />
+          </Col>
+          <Col span={3}>
+            <Statistic title={i18next.t("general:Chats")} value={lastUsage.chatCount} />
+          </Col>
+          <Col span={3}>
+            <Statistic title={i18next.t("general:Messages")} value={lastUsage.messageCount} />
+          </Col>
+          <Col span={3}>
+            <Statistic title={i18next.t("general:Tokens")} value={lastUsage.tokenCount} />
+          </Col>
+          {
+            this.props.account.name !== "admin" ? null : (
+              <React.Fragment>
+                <Col span={3}>
+                  <Statistic title={i18next.t("chat:Price")} value={lastUsage.price} prefix={lastUsage.currency && "$"} />
+                </Col>
+                {
+                  Conf.DefaultLanguage === "en" ? null : (
+                    <React.Fragment>
+                      <Col span={3}>
+                        <Statistic title={i18next.t("chat:CPrice")} value={parseFloat((lastUsage.price * 7.2).toFixed(2))} prefix={"￥"} />
+                      </Col>
+                    </React.Fragment>
+                  )
+                }
+              </React.Fragment>
+            )
+          }
+        </Row>
+      </Spin>
     );
   }
 
@@ -615,40 +627,35 @@ class UsagePage extends BaseListPage {
   }
 
   renderChart() {
-    if (this.state.rangeType === "All") {
-      if (this.state.usages === null) {
-        return null;
-      }
-
-      return (
-        <React.Fragment>
-          <Row style={{marginTop: "20px"}} >
-            <Col span={1} />
-            <Col span={11} >
-              {this.renderLeftChart(this.state.usages)}
-            </Col>
-            <Col span={11} >
-              {this.renderRightChart(this.state.usages)}
-            </Col>
-            <Col span={1} />
-          </Row>
-        </React.Fragment>
-      );
-    } else {
-      const fieldName = `rangeUsages${this.state.rangeType}`;
-      const rangeUsages = this.state[fieldName];
-
-      if (rangeUsages === null) {
-        return null;
-      }
-
-      return (
-        <React.Fragment>
-          {this.renderLeftRangeChart(rangeUsages)}
-          {this.renderRightRangeChart(rangeUsages)}
-        </React.Fragment>
-      );
-    }
+    return (
+      <Spin spinning={this.state.chartLoading}>
+        {this.state.rangeType === "All" ? (
+          <React.Fragment>
+            {this.state.usages === null ? null : (
+              <Row style={{marginTop: "20px"}} >
+                <Col span={1} />
+                <Col span={11} >
+                  {this.renderLeftChart(this.state.usages)}
+                </Col>
+                <Col span={11} >
+                  {this.renderRightChart(this.state.usages)}
+                </Col>
+                <Col span={1} />
+              </Row>
+            )}
+          </React.Fragment>
+        ) : (
+          <React.Fragment>
+            {this.state[`rangeUsages${this.state.rangeType}`] === null ? null : (
+              <React.Fragment>
+                {this.renderLeftRangeChart(this.state[`rangeUsages${this.state.rangeType}`])}
+                {this.renderRightRangeChart(this.state[`rangeUsages${this.state.rangeType}`])}
+              </React.Fragment>
+            )}
+          </React.Fragment>
+        )}
+      </Spin>
+    );
   }
 
   render() {
@@ -671,7 +678,11 @@ class UsagePage extends BaseListPage {
         </Row>
         <Row style={{marginTop: "20px"}} >
           <Col span={24} >
-            <UsageTable account={this.props.account} data={this.state.selectedTableInfo === null ? this.state.userTableInfo : this.state.selectedTableInfo} />
+            <UsageTable
+              account={this.props.account}
+              data={this.state.selectedTableInfo === null ? this.state.userTableInfo : this.state.selectedTableInfo}
+              loading={this.state.tableLoading}
+            />
           </Col>
         </Row>
       </div>
