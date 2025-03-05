@@ -14,7 +14,7 @@
 
 import React from "react";
 import {Link} from "react-router-dom";
-import {Button, Popconfirm, Table} from "antd";
+import {Button, Popconfirm, Table, Tooltip} from "antd";
 import moment from "moment";
 import BaseListPage from "./BaseListPage";
 import * as Setting from "./Setting";
@@ -147,6 +147,61 @@ class ProviderListPage extends BaseListPage {
         key: "type",
         width: "150px",
         sorter: (a, b) => a.type.localeCompare(b.type),
+        render: (text, record) => {
+          const typeToImageMap = {
+            "OpenAI": "openai",
+            "Google": "google",
+            "Azure": "azure",
+            "GitHub": "github",
+            "Baidu Cloud": "baidu_cloud",
+            "Tencent Cloud": "tencent_cloud",
+            "Alibaba Cloud": "aliyun",
+            "AWS": "aws",
+            "Gemini": "gemini",
+            "Hugging Face": "huggingface",
+            "Claude": "claude",
+            "OpenRouter": "openrouter",
+            "iFlytek": "iflytek",
+            "ChatGLM": "chatglm",
+            "MiniMax": "minimax",
+            "Ollama": "ollama",
+            "Local": "local",
+            "Cohere": "cohere",
+            "Moonshot": "moonshot",
+            "Amazon Bedrock": "amazon_bedrock",
+            "Dummy": "dummy",
+            "Baichuan": "baichuan",
+            "Doubao": "doubao",
+            "DeepSeek": "deepseek",
+            "StepFun": "stepfun",
+            "Yi": "yi",
+            "Silicon Flow": "silicon_flow",
+          };
+
+          const imageName = typeToImageMap[text] || text.toLowerCase();
+          const logoUrl = `https://cdn.casibase.org/img/social_${imageName}.png`;
+
+          return (
+            <Tooltip title={text}>
+              <div style={{display: "flex", alignItems: "center", justifyContent: "center"}}>
+                <img
+                  src={logoUrl}
+                  alt={text}
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    objectFit: "contain",
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                    e.target.nextSibling.style.display = "inline";
+                  }}
+                />
+                <span style={{display: "none", marginLeft: "4px"}}>{text}</span>
+              </div>
+            </Tooltip>
+          );
+        },
       },
       {
         title: i18next.t("provider:Sub type"),
