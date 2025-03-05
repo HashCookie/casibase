@@ -168,7 +168,7 @@ class ProviderListPage extends BaseListPage {
             "Local": "local",
             "Cohere": "cohere",
             "Moonshot": "moonshot",
-            "Amazon Bedrock": "amazon_bedrock",
+            "Amazon Bedrock": "bedrock",
             "Dummy": "dummy",
             "Baichuan": "baichuan",
             "Doubao": "doubao",
@@ -176,6 +176,9 @@ class ProviderListPage extends BaseListPage {
             "StepFun": "stepfun",
             "Yi": "yi",
             "Silicon Flow": "silicon_flow",
+            "Mistral": "mistral",
+            "Jina": "jina",
+            "Local File System": "local",
           };
 
           const imageName = typeToImageMap[text] || text.toLowerCase();
